@@ -2,7 +2,6 @@
 
 Hệ thống dự đoán xu hướng giá cổ phiếu T+1 và T+3 cho **toàn bộ 30 mã VN30**, kết hợp Machine Learning + Technical Analysis + LLM Agent.
 
-> ⚠️ **Disclaimer:** Đây là dự án nghiên cứu học thuật. Kết quả từ mô hình AI **không phải khuyến nghị đầu tư**.
 
 ---
 
