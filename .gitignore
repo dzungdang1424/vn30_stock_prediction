@@ -1,0 +1,25 @@
+# Secrets
+.env
+CLAUDE.md
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# Data (nặng)
+data/
+
+# Model artifacts
+outputs/models/
+outputs/metrics/
+outputs/predictions/
+outputs/logs/
+outputs/logs/*.log
+
+# OS
+.DS_Store
+Thumbs.db

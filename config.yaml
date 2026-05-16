@@ -1,0 +1,142 @@
+# ============================================================
+# VN30 Stock Prediction Pipeline — Configuration
+# ============================================================
+
+# --- Tickers ---
+tickers:
+  - VCB.VN
+  - VIC.VN
+  - HPG.VN
+  - VNM.VN
+  - FPT.VN
+  - VHM.VN
+  - MSN.VN
+  - MWG.VN
+  - TCB.VN
+  - VPB.VN
+  - BID.VN
+  - CTG.VN
+  - MBB.VN
+  - ACB.VN
+  - SSI.VN
+  - GAS.VN
+  - PLX.VN
+  - SAB.VN
+  - BVH.VN
+  - VJC.VN
+  - REE.VN
+  - POW.VN
+  - STB.VN
+  - TPB.VN
+  - HDB.VN
+  - PDR.VN
+  - KDH.VN
+  - NVL.VN
+  - VRE.VN
+  - GVR.VN
+
+# --- Data Collection (vnstock) ---
+data:
+  period: "3y"               # 3 năm — đủ cho tất cả 30 mã VN30 (kể cả mã niêm yết ~2021)
+  source: "VCI"              # vnstock source: "VCI" hoặc "kbs" — KHÔNG dùng TCBS
+  min_data_ratio: 0.8           # Loại mã có data < 80% max ngày
+  max_missing_ratio: 0.20       # Quality check: skip ticker nếu missing > 20%
+  retry_attempts: 3
+  retry_delay_seconds: 5
+
+
+# --- Feature Engineering ---
+features:
+  rank_min_tickers: 15          # Số mã tối thiểu để bật rank features
+  # Raw feature parameters (pandas-ta defaults trừ khi ghi rõ)
+  rsi_period: 14
+  kama_period: 10               # [THÊM] Kaufman Adaptive MA period
+  tema_period: 20
+  hma_period: 20
+  atr_period: 14
+  bb_period: 20
+  bb_std: 2.0
+  mfi_period: 14
+  ichimoku_tenkan: 9
+  ichimoku_kijun: 26
+
+# --- Label Engineering ---
+labels:
+  horizons:
+    - 1                         # T+1
+    - 3                         # T+3
+  init_multiplier: 0.5         # Hệ số bắt đầu cho dynamic threshold search
+  rolling_window: 20           # Window tính rolling_std
+  max_nan_ratio: 0.5           # Nếu NaN > 50%, auto-giảm multiplier
+  min_multiplier: 0.1          # Sàn multiplier khi auto-giảm
+  multiplier_step: 0.05        # Bước giảm multiplier
+
+# --- Training ---
+training:
+  train_days: 252              # ~1 năm giao dịch → ~6-7 folds với 688 ngày
+  test_days: 63                # ~3 tháng giao dịch
+  step_days: 63                # Bước trượt walk-forward
+  purging_gap: 10              # [THÊM] Khoảng cách an toàn giữa Train và Test để chống Lookahead Bias (>= horizon)
+  walk_forward_mode: "rolling" # "rolling" (cửa sổ cố định) hoặc "expanding" (mở rộng dần)
+  random_state: 42
+  sequence_length: 20          # Dùng chung cho data_preparation và LSTM
+
+# --- Model Hyperparameters ---
+models:
+  logistic_regression:
+    max_iter: 1000
+    solver: "lbfgs"
+    class_weight: "balanced"
+
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    class_weight: "balanced"
+    random_state: 42
+
+  xgboost:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    random_state: 42
+    # scale_pos_weight tự tính từ class distribution mỗi fold
+
+  lightgbm:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    random_state: 42
+    class_weight: "balanced"
+
+  lstm:
+    units_layer1: 64
+    units_layer2: 32
+    dropout: 0.2
+    epochs: 50
+    batch_size: 32
+    early_stopping_patience: 10
+    # sequence_length đã chuyển sang section training
+
+# --- Backtest ---
+backtest:
+  prob_threshold: 0.6          # Chỉ trade khi confidence > 60%
+  fee_rate: 0.0015             # 0.15% một chiều (mua hoặc bán) — nhân đôi khi tính round-trip
+  position_size: 0.1           # 10% vốn hiện tại mỗi lệnh
+  initial_capital: 100000000   # 100 triệu VND
+
+# --- Paths ---
+paths:
+
+  processed_data: "data/processed"
+  ohlcv_data: "data/processed/ohlcv"         # [THÊM] OHLCV đã làm sạch
+  features_data: "data/processed/features"   # [THÊM] Features đã tính
+  labels_data: "data/processed/labels"       # [THÊM] Labels đã tính
+  models_output: "outputs/models"
+  metrics_output: "outputs/metrics"
+  predictions_output: "outputs/predictions"  # [THÊM] JSON cho LLM Agent
+
+  logs: "outputs/logs"
+
+# --- Misc ---
+seed: 42
+log_level: "INFO"
